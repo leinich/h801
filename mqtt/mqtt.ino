@@ -21,10 +21,12 @@ PubSubClient client(wifiClient);
 ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 
-const char* mqtt_server = "192.168.1.89";
+const char* mqtt_server = "192.168.178.29";
+const char* mqtt_user = "homeassistant";
+const char* mqtt_pass = "homeassistant";
 // Password for update server
 const char* username = "admin";
-const char* password = "";
+const char* password = "homeassistant";
 
 // MQTT topics
 // state, brightness, rgb
@@ -115,19 +117,21 @@ void setup()
   wifiManager.addParameter(&custom_mqtt_server);
   WiFiManagerParameter custom_password("password", "password for updates", password, 40);
   wifiManager.addParameter(&custom_password);
+  WiFiManagerParameter custom_mqtt_user("mqttuser", "mqtt user", mqtt_user, 40);
+  wifiManager.addParameter(&custom_mqtt_user);
+  WiFiManagerParameter custom_mqtt_pass("mqttpass", "mqtt pass", mqtt_pass, 40);
+  wifiManager.addParameter(&custom_mqtt_pass);
   wifiManager.setCustomHeadElement(chip_id);
   wifiManager.autoConnect();
 
   mqtt_server = custom_mqtt_server.getValue();
+  mqtt_user = custom_mqtt_user.getValue();
+  mqtt_pass = custom_mqtt_pass.getValue();
   password = custom_password.getValue();
-
-  Serial1.println("");
 
   Serial1.println("WiFi connected");
   Serial1.println("IP address: ");
   Serial1.println(WiFi.localIP());
-
-  Serial1.println("");
 
   // init the MQTT connection
   client.setServer(mqtt_server, 1883);
@@ -338,42 +342,48 @@ void callback(char* p_topic, byte* p_payload, unsigned int p_length) {
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    Serial1.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect(chip_id)) {
-      Serial.println("connected");
-
+    if (client.connect(chip_id, mqtt_user, mqtt_pass)) {
+      Serial1.println("connected");
+      // blink 10 times green LED for success connected
+      for (int x=0; x < 10; x++){
+        delay(100);
+        digitalWrite(GREEN_PIN, 0);
+        delay(100);
+        digitalWrite(GREEN_PIN, 1);
+      }
+      
       client.publish(MQTT_UP, chip_id);
-
       // Once connected, publish an announcement...
       // publish the initial values
       publishRGBState();
       publishRGBBrightness();
       publishRGBColor();
-
       publishW1State();
       publishW1Brightness();
-
       publishW2State();
       publishW2Brightness();
-
       // ... and resubscribe
       client.subscribe(MQTT_LIGHT_RGB_COMMAND_TOPIC);
       client.subscribe(MQTT_LIGHT_RGB_BRIGHTNESS_COMMAND_TOPIC);
       client.subscribe(MQTT_LIGHT_RGB_RGB_COMMAND_TOPIC);
-
       client.subscribe(MQTT_LIGHT_W1_COMMAND_TOPIC);
       client.subscribe(MQTT_LIGHT_W1_BRIGHTNESS_COMMAND_TOPIC);
-
       client.subscribe(MQTT_LIGHT_W2_COMMAND_TOPIC);
       client.subscribe(MQTT_LIGHT_W2_BRIGHTNESS_COMMAND_TOPIC);
-
     } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+      Serial1.print("failed, rc=");
+      Serial1.print(client.state());
+      Serial1.print(mqtt_server);
+      Serial1.println(" try again in 5 seconds");
+      // Wait about 5 seconds (10 x 500ms) before retrying
+      for (int x=0; x < 10; x++){
+        delay(400);
+        digitalWrite(RED_PIN, 0);
+        delay(100);
+        digitalWrite(RED_PIN, 1);
+      }
     }
   }
 }
