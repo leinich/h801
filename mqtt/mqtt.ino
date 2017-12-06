@@ -1,7 +1,8 @@
 //
 // Alternative firmware for H801 5 channel LED dimmer
 // based on https://github.com/mertenats/open-home-automation/blob/master/ha_mqtt_rgb_light/ha_mqtt_rgb_light.ino
-//
+// chnaged defaults
+
 #include <string>
 
 #include <ESP8266WiFi.h>
@@ -22,8 +23,8 @@ ESP8266WebServer httpServer(80);
 ESP8266HTTPUpdateServer httpUpdater;
 
 const char* mqtt_server = "192.168.178.29";
-const char* mqtt_user = "homeassistant";
-const char* mqtt_pass = "homeassistant";
+const char* mqtt_user = "mqttuser";
+const char* mqtt_pass = "mqttpass";
 // Password for update server
 const char* username = "admin";
 const char* password = "homeassistant";
